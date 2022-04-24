@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.*
+import kotlinx.coroutines.launch
 
 class OtpListViewModel : ViewModel() {
 
@@ -16,23 +17,25 @@ class OtpListViewModel : ViewModel() {
         get() = _smsMessages
 
     fun getSmsList(context: Context) {
-        val smsList = mutableListOf<String>()
+        viewModelScope.launch {
+            val smsList = mutableListOf<String>()
 
-        val contentResolver = context.contentResolver ?: return
-        val cursor = contentResolver.query(Uri.parse("content://sms/inbox"), null, null, null, null)
-            ?: return
+            val contentResolver = context.contentResolver ?: return@launch
+            val cursor = contentResolver.query(Uri.parse("content://sms/inbox"), null, null, null, null)
+                ?: return@launch
 
-        val indexAddress = cursor.getColumnIndex("address");
-        val indexBody = cursor.getColumnIndex("body")
+            val indexAddress = cursor.getColumnIndex("address");
+            val indexBody = cursor.getColumnIndex("body")
 
-        if (indexBody < 0 || !cursor.moveToFirst()) return
+            if (indexBody < 0 || !cursor.moveToFirst()) return@launch
 
-        do {
-            val str = cursor.getString(indexBody)
-            smsList.add(str)
-        } while (cursor.moveToNext())
+            do {
+                val str = cursor.getString(indexBody)
+                smsList.add(str)
+            } while (cursor.moveToNext())
 
 
-        _smsMessages.value = smsList
+            _smsMessages.value = smsList
+        }
     }
 }
